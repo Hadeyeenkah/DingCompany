@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0e2f34">
+    <meta name="description" content="Secure client and administration portal for Intercoastal Water LLC project partners.">
+    <meta name="color-scheme" content="light">
+    <title>Intercoastal Water LLC | Client Portal</title>
+    <!-- Fonts: no external stylesheet is loaded here. The site's Content
+         Security Policy (style-src 'self') blocks stylesheets from other
+         origins, including Google Fonts — loading one there triggers a
+         browser-blocked-resource error, not a warning. The design already
+         falls back to system fonts (Georgia-family serif for headings,
+         the OS UI sans-serif for body text) via styles.css, so this reads
+         correctly without it. To use Fraunces/IBM Plex Sans, self-host the
+         .woff2 files from this origin and add @font-face rules to
+         styles.css — never link an external font stylesheet under this
+         CSP. -->
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <noscript>
+      <div class="noscript-banner">
+        This portal needs JavaScript to load your project data. Turn JavaScript on for this site, then reload the page.
+      </div>
+    </noscript>
+
+    <main id="auth-view" class="auth-shell">
+      <section class="brand-panel" aria-label="About Intercoastal Water LLC">
+        <div class="brand-lockup brand-lockup-light">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>Intercoastal</strong><small>Water LLC</small></span>
+        </div>
+        <div class="brand-copy">
+          <p class="eyebrow">Integrated infrastructure</p>
+          <h1>Powering resilient communities with water at their core.</h1>
+          <p>Secure project visibility for our water, power and sewage-treatment partners.</p>
+        </div>
+        <ul class="service-list">
+          <li>Power generation</li>
+          <li>Water supply</li>
+          <li>Sewage treatment</li>
+        </ul>
+        <div class="water-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+      </section>
+
+      <section class="auth-panel" aria-label="Sign in">
+        <div class="auth-card">
+          <div class="mobile-brand brand-lockup">
+            <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span><strong>Intercoastal</strong><small>Water LLC</small></span>
+          </div>
+          <div class="auth-heading">
+            <p class="eyebrow">Client and administration portal</p>
+            <h2 id="auth-title">Welcome back</h2>
+            <p id="auth-subtitle">Sign in to view your project and investment information.</p>
+          </div>
+
+          <div class="auth-error" id="auth-error" role="alert" hidden></div>
+
+          <form id="login-form" class="form-stack" novalidate>
+            <label>Email address
+              <input name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="you@company.com" required>
+            </label>
+            <label>Password
+              <input name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            </label>
+            <button class="button button-primary button-full" type="submit">Sign in</button>
+          </form>
+
+          <p class="auth-note">Your information is protected by server-side access controls.</p>
+        </div>
+      </section>
+    </main>
+
+    <div id="portal" class="portal" hidden>
+      <aside class="sidebar" id="sidebar" aria-label="Portal sections">
+        <div class="sidebar-top">
+          <div class="brand-lockup brand-lockup-light">
+            <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span><strong>Intercoastal</strong><small>Water LLC</small></span>
+          </div>
+          <button class="sidebar-close icon-button" type="button" data-close-sidebar aria-label="Close menu">&times;</button>
+        </div>
+        <nav class="portal-nav" aria-label="Main">
+          <button type="button" data-page="dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Overview</button>
+          <button type="button" data-page="investment"><span class="nav-icon" aria-hidden="true">◒</span>My investment</button>
+          <button type="button" data-page="project"><span class="nav-icon" aria-hidden="true">⌁</span>Project centre</button>
+          <button type="button" data-page="financials"><span class="nav-icon" aria-hidden="true">▥</span>Financials</button>
+          <button type="button" data-page="documents"><span class="nav-icon" aria-hidden="true">▤</span>Documents</button>
+          <button type="button" data-page="messages"><span class="nav-icon" aria-hidden="true">◌</span>Messages</button>
+          <button type="button" data-page="profile"><span class="nav-icon" aria-hidden="true">◎</span>My profile</button>
+          <button type="button" data-page="admin" class="admin-only" hidden><span class="nav-icon" aria-hidden="true">⚙</span>Administration</button>
+        </nav>
+        <div class="sidebar-footer">
+          <p class="live-row"><span class="status-dot" aria-hidden="true"></span><span id="live-status" data-status="offline">Updates paused</span></p>
+          <p>Need help? <a href="mailto:partners@intercoastalwater.com">Contact project support</a></p>
+        </div>
+      </aside>
+
+      <div class="sidebar-overlay" data-close-sidebar hidden></div>
+
+      <section class="workspace">
+        <header class="topbar">
+          <button class="menu-button icon-button" type="button" data-open-sidebar aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">☰</button>
+          <div class="crumb">
+            <span id="crumb-label">Overview</span>
+            <small id="crumb-description">Client portal</small>
+          </div>
+          <div class="account-menu">
+            <div class="account-copy">
+              <strong id="top-user-name">&mdash;</strong>
+              <span id="top-user-role">Client partner</span>
+            </div>
+            <span class="avatar" id="avatar" aria-hidden="true">&mdash;</span>
+            <button class="signout-button" type="button" data-signout>Sign out</button>
+          </div>
+        </header>
+        <div class="workspace-content" id="page-content" tabindex="-1" role="region" aria-live="polite" aria-busy="false"></div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "intercoastal-water-portal",
+  "version": "1.0.0",
+  "description": "Secure client and administration portal for Intercoastal Water LLC.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "water-utility",
+    "client-portal",
+    "investor-portal"
+  ],
+  "license": "UNLICENSED"
+}
