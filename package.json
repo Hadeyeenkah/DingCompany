@@ -9,11 +9,14 @@
     "start": "node server.js",
     "test": "node --test"
   },
-  "devDependencies": {},
   "keywords": [
     "water-utility",
     "client-portal",
     "investor-portal"
   ],
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@vercel/blob": "^2.8.0"
+  }
 }
