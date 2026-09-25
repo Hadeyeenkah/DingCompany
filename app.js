@@ -30,7 +30,7 @@
   const sidebarOverlay = document.querySelector('.sidebar-overlay');
 
   let toastTimer;
-  let eventSource;
+  let pollTimer;
   let realtimeRefreshTimer;
   let realtimeRefreshInFlight = false;
   let realtimeRefreshQueued = false;
@@ -332,19 +332,26 @@
   }
 
   /* ---------------------------------------------------------------------
-     Live updates
+     Live updates — polling, not push
+
+     The original design used Server-Sent Events (a held-open connection
+     the server pushed change notifications through). Vercel's serverless
+     functions can't hold a connection open like that, so this polls
+     instead: every 20s, while the tab is visible, it asks the server for
+     fresh data the same way an SSE-triggered refresh used to. Everything
+     below queueRealtimeRefresh() — the "don't refresh out from under an
+     open form" guards, the retry-on-failure logic — is unchanged; only
+     what *starts* a refresh cycle is different.
      --------------------------------------------------------------------- */
 
   function setLiveStatus(status) {
     if (!liveStatus) return;
     const labels = {
-      connecting: 'Connecting live updates',
-      live: 'Live updates on',
-      refreshing: 'Refreshing live data',
+      live: 'Auto-refresh on',
+      refreshing: 'Refreshing…',
       pending: 'New data ready',
-      reconnecting: 'Reconnecting updates',
-      unavailable: 'Live updates unavailable',
-      offline: 'Updates paused'
+      reconnecting: 'Refresh failed — retrying',
+      offline: 'Auto-refresh paused'
     };
     liveStatus.dataset.status = status;
     liveStatus.textContent = labels[status] || labels.offline;
@@ -418,20 +425,10 @@
 
   function openRealtimeConnection() {
     closeRealtimeConnection(false);
-    if (!window.EventSource) {
-      setLiveStatus('unavailable');
-      return;
-    }
-    setLiveStatus('connecting');
-    eventSource = new EventSource('/api/events');
-    eventSource.addEventListener('connected', () => setLiveStatus('live'));
-    eventSource.addEventListener('portal-change', (event) => {
-      let changeType = 'portal';
-      try { changeType = JSON.parse(event.data)?.type || 'portal'; } catch { /* keep default */ }
-      queueRealtimeRefresh(changeType);
-    });
-    eventSource.onopen = () => setLiveStatus('live');
-    eventSource.onerror = () => { if (eventSource) setLiveStatus('reconnecting'); };
+    setLiveStatus('live');
+    pollTimer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') queueRealtimeRefresh('poll');
+    }, 20000);
   }
 
   function closeRealtimeConnection(updateStatus = true) {
@@ -439,9 +436,9 @@
     realtimeRefreshTimer = undefined;
     pendingRealtimeChanges.clear();
     realtimeRefreshQueued = false;
-    if (eventSource) {
-      eventSource.close();
-      eventSource = undefined;
+    if (pollTimer) {
+      window.clearInterval(pollTimer);
+      pollTimer = undefined;
     }
     if (updateStatus) setLiveStatus('offline');
   }

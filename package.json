@@ -1,22 +1,13 @@
 {
   "name": "intercoastal-water-portal",
   "version": "1.0.0",
-  "description": "Secure client and administration portal for Intercoastal Water LLC.",
   "private": true,
-  "main": "server.js",
-  "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js",
-    "test": "node --test"
+  "description": "Intercoastal Water LLC client and administration portal.",
+  "engines": {
+    "node": ">=18"
   },
-  "keywords": [
-    "water-utility",
-    "client-portal",
-    "investor-portal"
-  ],
-  "license": "UNLICENSED",
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
-    "@vercel/blob": "^2.8.0"
+    "@vercel/blob": "latest",
+    "@vercel/kv": "latest"
   }
 }
