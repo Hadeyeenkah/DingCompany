@@ -22,13 +22,41 @@
 
 const crypto = require('node:crypto');
 const { promisify } = require('node:util');
-const { kv } = require('@vercel/kv');
-const { put, del: deleteBlob } = require('@vercel/blob');
+const { Redis } = require('@upstash/redis');
 
 const scrypt = promisify(crypto.scrypt);
 const DATABASE_KEY = 'intercoastal:database';
 const SESSION_PREFIX = 'intercoastal:session:';
 const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours — matches the original SESSION_TTL_MS
+
+// Vercel's own "KV" product was discontinued (Dec 2024) — every existing
+// store was migrated to plain Upstash Redis, and @vercel/kv is a dead
+// package (no releases since Sept 2024, and its own npm listing says so).
+// @upstash/redis is the direct replacement with the same get/set/del
+// surface. Redis.fromEnv() reads whichever env vars your Vercel project
+// actually has — it checks both the legacy KV_REST_API_URL/KV_REST_API_TOKEN
+// names and the current UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN
+// names, so it works however you attached the store.
+//
+// Built lazily (on first real use, inside a request) rather than at
+// module load time: if the env vars are ever genuinely missing, this way
+// the error surfaces as a normal caught 500 with a readable message
+// instead of a hard, undebuggable FUNCTION_INVOCATION_FAILED crash.
+let redisClient;
+function redis() {
+  if (!redisClient) redisClient = Redis.fromEnv();
+  return redisClient;
+}
+
+// Same reasoning as redis() above, applied to Blob: require it lazily, on
+// first actual use inside a request, so a missing BLOB_READ_WRITE_TOKEN
+// (Blob store not attached yet) surfaces as a caught, readable 500 instead
+// of an opaque platform-level crash.
+let blobModule;
+function blob() {
+  if (!blobModule) blobModule = require('@vercel/blob');
+  return blobModule;
+}
 
 const defaultProject = {
   id: 'intercoastal-integrated-utility',
@@ -100,7 +128,7 @@ async function passwordMatches(password, stored) {
  * ------------------------------------------------------------------ */
 
 async function getDatabase() {
-  const stored = await kv.get(DATABASE_KEY);
+  const stored = await redis().get(DATABASE_KEY);
   const database = stored || defaultDatabase();
   database.users ||= [];
   database.documents ||= [];
@@ -128,16 +156,16 @@ async function getDatabase() {
         location: 'Coastal Service District'
       }
     });
-    await kv.set(DATABASE_KEY, database);
+    await redis().set(DATABASE_KEY, database);
   } else if (!stored) {
-    await kv.set(DATABASE_KEY, database);
+    await redis().set(DATABASE_KEY, database);
   }
 
   return database;
 }
 
 async function saveDatabase(database) {
-  await kv.set(DATABASE_KEY, database);
+  await redis().set(DATABASE_KEY, database);
 }
 
 /* ------------------------------------------------------------------ *
@@ -147,17 +175,17 @@ async function saveDatabase(database) {
 
 async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('base64url');
-  await kv.set(`${SESSION_PREFIX}${token}`, { userId }, { ex: SESSION_TTL_SECONDS });
+  await redis().set(`${SESSION_PREFIX}${token}`, { userId }, { ex: SESSION_TTL_SECONDS });
   return token;
 }
 
 async function getSession(token) {
   if (!token) return null;
-  return (await kv.get(`${SESSION_PREFIX}${token}`)) || null;
+  return (await redis().get(`${SESSION_PREFIX}${token}`)) || null;
 }
 
 async function destroySession(token) {
-  if (token) await kv.del(`${SESSION_PREFIX}${token}`);
+  if (token) await redis().del(`${SESSION_PREFIX}${token}`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -169,12 +197,13 @@ async function destroySession(token) {
  * ------------------------------------------------------------------ */
 
 async function storeDocumentFile(storageName, buffer, contentType) {
-  const blob = await put(`documents/${storageName}`, buffer, {
+  const { put } = blob();
+  const uploaded = await put(`documents/${storageName}`, buffer, {
     access: 'public',
     contentType,
     addRandomSuffix: false
   });
-  return blob.url;
+  return uploaded.url;
 }
 
 async function fetchDocumentBuffer(url) {
@@ -186,7 +215,8 @@ async function fetchDocumentBuffer(url) {
 async function deleteDocumentFile(url) {
   if (!url) return;
   try {
-    await deleteBlob(url);
+    const { del } = blob();
+    await del(url);
   } catch (error) {
     // Non-fatal: the database record is already gone, which is what the
     // rest of the app checks. A stray blob left in storage isn't visible
